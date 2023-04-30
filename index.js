@@ -93,7 +93,7 @@ async function main() {
 
                 try {
                     response = JSON.parse(response);
-                    if (response.data.o == playerName  && uniqueIds.indexOf(response.data.g) == -1) {
+                    if (response.data.o == playerName && uniqueIds.indexOf(response.data.g) == -1) {
                         uniqueIds.push(response.data.g);
                         localStorage.setItem(STORAGE_KEY, JSON.stringify(uniqueIds));
                     }
@@ -114,8 +114,7 @@ async function main() {
     ol.source.Vector.prototype.addFeature = function(t) {
         if (t.getGeometry().getType() == 'Point') {
             if (uniqueIds.indexOf(t.getId()) == -1) {
-                t.setStyle(UniqueFeatureStyle(t.getGeometry().getCoordinates(), t.getProperties()['team'], t.getProperties()['energy']));
-                console.log('.');
+                t.setStyle(UniqueFeatureStyle(t.getGeometry().getCoordinates(), t.getProperties()["team"], t.getProperties()["energy"]));
             }
         }
         this.addFeatureInternal(t);
