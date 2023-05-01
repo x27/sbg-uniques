@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         SBG Uniques
 // @namespace    https://3d.sytes.net/
-// @version      1.0.1
+// @version      1.0.2
 // @downloadURL  https://x27.github.io/sbg-uniques/index.js
 // @updateURL    https://x27.github.io/sbg-uniques/index.js
 // @description  Uniques for SBG
@@ -54,27 +54,20 @@ async function main() {
 
             ctx.lineWidth = 2
             ctx.strokeStyle = TeamColors[team].stroke
-            ctx.fillStyle = TeamColors[team].fill()
+            ctx.fillStyle = TeamColors[team].fill
             ctx.beginPath()
             ctx.arc(xc, yc, radius, ...calculateAngle(1 - energy, energy))
             ctx.lineTo(xc, yc)
             ctx.fill()
 
             ctx.fillStyle = TeamColors[team].fill
-            ctx.strokeStyle = TeamColors[team].stroke
+            ctx.strokeStyle = UNIQUE_COLOR
             ctx.beginPath()
             ctx.arc(xc, yc, radius, ...calculateAngle(energy))
             ctx.lineTo(xc, yc)
             ctx.fill()
             ctx.beginPath()
             ctx.arc(xc, yc, radius, 0, 2 * Math.PI)
-            ctx.stroke()
-
-            // unique 
-            ctx.lineWidth = 2
-            ctx.strokeStyle = UNIQUE_COLOR;
-            ctx.beginPath()
-            ctx.arc(xc, yc, radius + 4, 0, 2 * Math.PI)
             ctx.stroke()
         }
     });
