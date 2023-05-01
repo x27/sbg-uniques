@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         SBG Uniques
 // @namespace    https://3d.sytes.net/
-// @version      1.0.0
+// @version      1.0.1
 // @downloadURL  https://x27.github.io/sbg-uniques/index.js
 // @updateURL    https://x27.github.io/sbg-uniques/index.js
 // @description  Uniques for SBG
@@ -39,7 +39,13 @@ async function main() {
         : JSON.parse(localStorage.getItem('settings')).theme == 'dark'
 
 
-    const UniqueFeatureStyle = (pos, team, energy) => new ol.style.Style({
+    const NeutralUniqueFeatureStyle = (pos) => new ol.style.Style({
+        geometry: new ol.geom.Circle(pos, 12),
+        fill: new ol.style.Fill({ color: TeamColors[0].fill() }),
+        stroke: new ol.style.Stroke({ color: UNIQUE_COLOR, width: 2 }),
+});
+
+    const TeamUniqueFeatureStyle = (pos, team, energy) => new ol.style.Style({
         geometry: new ol.geom.Circle(pos, 12),
         renderer: (coords, state) => {
             const ctx = state.context
@@ -48,13 +54,14 @@ async function main() {
 
             ctx.lineWidth = 2
             ctx.strokeStyle = TeamColors[team].stroke
-            ctx.fillStyle = TeamColors[0].fill()
+            ctx.fillStyle = TeamColors[team].fill()
             ctx.beginPath()
             ctx.arc(xc, yc, radius, ...calculateAngle(1 - energy, energy))
             ctx.lineTo(xc, yc)
             ctx.fill()
 
             ctx.fillStyle = TeamColors[team].fill
+            ctx.strokeStyle = TeamColors[team].stroke
             ctx.beginPath()
             ctx.arc(xc, yc, radius, ...calculateAngle(energy))
             ctx.lineTo(xc, yc)
@@ -64,7 +71,6 @@ async function main() {
             ctx.stroke()
 
             // unique 
-
             ctx.lineWidth = 2
             ctx.strokeStyle = UNIQUE_COLOR;
             ctx.beginPath()
@@ -114,7 +120,12 @@ async function main() {
     ol.source.Vector.prototype.addFeature = function(t) {
         if (t.getGeometry().getType() == 'Point') {
             if (uniqueIds.indexOf(t.getId()) == -1) {
-                t.setStyle(UniqueFeatureStyle(t.getGeometry().getCoordinates(), t.getProperties()["team"], t.getProperties()["energy"]));
+                if (t.getProperties()["team"] == 0) {
+                    t.setStyle(NeutralUniqueFeatureStyle(t.getGeometry().getCoordinates()));
+                }
+                else {
+                    t.setStyle(TeamUniqueFeatureStyle(t.getGeometry().getCoordinates(), t.getProperties()["team"], t.getProperties()["energy"]));
+                }
             }
         }
         this.addFeatureInternal(t);
