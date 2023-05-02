@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         SBG Uniques
 // @namespace    https://3d.sytes.net/
-// @version      1.0.2
+// @version      1.0.3
 // @downloadURL  https://x27.github.io/sbg-uniques/index.js
 // @updateURL    https://x27.github.io/sbg-uniques/index.js
 // @description  Uniques for SBG
@@ -16,8 +16,8 @@ window.addEventListener('load', () => setTimeout(main, 1000), false);
 async function main() {
     'use strict';
 
-    const STORAGE_KEY = 'plugin-unique-uuids'; 
     const UNIQUE_COLOR= 'magenta';
+    let unique_uuids = [];
 
     const TeamColors = [
         { fill: () => is_dark ? '#AAAAAA80' : '#44444480', stroke: () => is_dark ? '#AAA' : '#444' },
@@ -38,12 +38,6 @@ async function main() {
         ? matchMedia('(prefers-color-scheme: dark)').matches
         : JSON.parse(localStorage.getItem('settings')).theme == 'dark'
 
-
-    const NeutralUniqueFeatureStyle = (pos) => new ol.style.Style({
-        geometry: new ol.geom.Circle(pos, 12),
-        fill: new ol.style.Fill({ color: TeamColors[0].fill() }),
-        stroke: new ol.style.Stroke({ color: UNIQUE_COLOR, width: 2 }),
-});
 
     const TeamUniqueFeatureStyle = (pos, team, energy) => new ol.style.Style({
         geometry: new ol.geom.Circle(pos, 12),
@@ -72,30 +66,22 @@ async function main() {
         }
     });
 
+    window.XMLHttpRequest = class extends window.XMLHttpRequest {
 
-    async function getSelfName() {
-        return fetch('/api/self', {
-            headers: { authorization: `Bearer ${localStorage.getItem('auth')}`, },
-            method: "GET",
-        })
-            .then(r => r.json())
-            .then(r => r.n)
-            .catch(err => { console.log(`Can't get player name. ${err}`); });
-    }
+        open(method, url, async, user, pass) {
+            if (url.match(/\/api\/inview/)) 
+                url = url.concat('&unique=c');
+            return super.open(method, url, async, user, pass);
+        }
 
-    class CustomXHR extends window.XMLHttpRequest {
         send(body) {
+
             this.addEventListener('load', _ => {
-                let path = this.responseURL.match(/\/api\/point/);
-                let response = this.response;
-                if (!path) { return; }
+                if (!this.responseURL.match(/\/api\/inview/))
+                    return;
 
                 try {
-                    response = JSON.parse(response);
-                    if (response.data.o == playerName && uniqueIds.indexOf(response.data.g) == -1) {
-                        uniqueIds.push(response.data.g);
-                        localStorage.setItem(STORAGE_KEY, JSON.stringify(uniqueIds));
-                    }
+                    unique_uuids = JSON.parse(this.response).data.points.filter(p => p.u).map(p => p.g);
                 } catch (error) {
                     console.log('Parse server response error.', error);
                 }
@@ -104,17 +90,11 @@ async function main() {
         }
     }
 
-    window.XMLHttpRequest = CustomXHR;
-
-    var playerName = await getSelfName();
-
-    var uniqueIds = JSON.parse(localStorage.getItem(STORAGE_KEY)) || []
-
     ol.source.Vector.prototype.addFeature = function(t) {
         if (t.getGeometry().getType() == 'Point') {
-            if (uniqueIds.indexOf(t.getId()) == -1) {
+            if (unique_uuids.indexOf(t.getId()) == -1) {
                 if (t.getProperties()["team"] == 0) {
-                    t.setStyle(NeutralUniqueFeatureStyle(t.getGeometry().getCoordinates()));
+                    t.getStyle()[0].getStroke().setColor(UNIQUE_COLOR);
                 }
                 else {
                     t.setStyle(TeamUniqueFeatureStyle(t.getGeometry().getCoordinates(), t.getProperties()["team"], t.getProperties()["energy"]));
