@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         SBG Uniques
 // @namespace    https://3d.sytes.net/
-// @version      1.0.3
+// @version      1.0.4
 // @downloadURL  https://x27.github.io/sbg-uniques/index.js
 // @updateURL    https://x27.github.io/sbg-uniques/index.js
 // @description  Uniques for SBG
@@ -44,7 +44,7 @@ async function main() {
         renderer: (coords, state) => {
             const ctx = state.context
             const [[xc, yc], [xe, ye]] = coords
-            const radius = Math.sqrt((xe - xc) ** 2 + (ye - yc) ** 2)
+            const radius = 12
 
             ctx.lineWidth = 2
             ctx.strokeStyle = TeamColors[team].stroke
@@ -66,29 +66,23 @@ async function main() {
         }
     });
 
-    window.XMLHttpRequest = class extends window.XMLHttpRequest {
+    const { fetch: originalFetch } = window;
 
-        open(method, url, async, user, pass) {
-            if (url.match(/\/api\/inview/)) 
-                url = url.concat('&unique=c');
-            return super.open(method, url, async, user, pass);
+    window.fetch = async (...args) => {
+        let [resource, config ] = args;
+        if (resource.match(/\/api\/inview/)) 
+            resource = resource.concat('&unique=c');
+
+        const response = await originalFetch(resource, config);
+        if (response.url.match(/\/api\/inview/)) {
+            try {
+                unique_uuids = (await response.clone().json()).data.points.filter(p => p.u).map(p => p.g);
+            } catch (error) {
+                console.log('Parse server response error.', error);
+            }
         }
-
-        send(body) {
-
-            this.addEventListener('load', _ => {
-                if (!this.responseURL.match(/\/api\/inview/))
-                    return;
-
-                try {
-                    unique_uuids = JSON.parse(this.response).data.points.filter(p => p.u).map(p => p.g);
-                } catch (error) {
-                    console.log('Parse server response error.', error);
-                }
-            });
-            super.send(body);
-        }
-    }
+        return response;        
+    };
 
     ol.source.Vector.prototype.addFeature = function(t) {
         if (t.getGeometry().getType() == 'Point') {
