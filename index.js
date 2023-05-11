@@ -44,7 +44,7 @@ async function main() {
         renderer: (coords, state) => {
             const ctx = state.context
             const [[xc, yc], [xe, ye]] = coords
-            const radius = 12
+            const radius = Math.sqrt((xe - xc) ** 2 + (ye - yc) ** 2)
 
             ctx.lineWidth = 2
             ctx.strokeStyle = TeamColors[team].stroke
